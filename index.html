@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professional Archive</title>
+<style>
+body {
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#050b14;
+    color:white;
+    overflow-x:hidden;
+}
+
+#snow {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:-1;
+}
+
+.container {
+    max-width:900px;
+    margin:50px auto;
+    padding:20px;
+    text-align:center;
+}
+
+h1 {
+    margin-bottom:30px;
+    font-size:2.5rem;
+    background:linear-gradient(to right,#ffffff,#cccccc);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.info-panels {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+.info-panel {
+    background:#ffffff;
+    color:#000;
+    border-radius:8px;
+    padding:20px;
+    text-align:left;
+    box-shadow:0 0 10px #ffffff20;
+}
+.info-panel h3 {margin-bottom:10px; font-size:18px;}
+.info-panel p {font-size:14px;}
+
+.upload-btn {
+    display:inline-block;
+    margin-bottom:30px;
+    padding:12px 20px;
+    border:none;
+    border-radius:6px;
+    background:#ffffff;
+    color:#000;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+}
+.upload-btn:hover { background:#e6e6e6; }
+
+.file-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    gap:20px;
+}
+.file-card {
+    background:#ffffff10;
+    padding:15px;
+    border-radius:8px;
+    border-left:4px solid #ffffff;
+    text-align:center;
+    word-break:break-word;
+}
+.file-card h4 {margin:8px 0 4px 0; color:#fff;}
+.file-card p {font-size:0.85rem; color:#ccc;}
+.file-card a {
+    margin-top:10px; display:inline-block; padding:6px 12px;
+    border-radius:6px; background:#ffffff; color:#000; text-decoration:none;
+}
+.file-card a:hover {background:#e6e6e6;}
+.file-card img, .file-card video {max-width:100%; max-height:150px; border-radius:6px; margin-top:8px;}
+
+/* MODAL */
+.modal {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.85); display:none;
+    justify-content:center; align-items:center; z-index:1000;
+}
+.modal-content {
+    background:#f7f7f7; padding:25px; border-radius:12px;
+    width:400px; text-align:left; color:#000;
+    box-shadow:0 0 30px #ffffff50;
+}
+.modal-content h2 {text-align:center; margin-bottom:15px;}
+.panel {background:#ffffff; padding:12px 15px; border-radius:6px; margin-bottom:12px;}
+.panel label {display:block; font-size:13px; margin-bottom:3px; font-weight:bold;}
+.panel input {width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; font-size:14px;}
+.modal-content button {width:100%; padding:12px; border:none; border-radius:6px; background:#ffffff; color:#000; font-weight:bold; cursor:pointer; transition:0.2s;}
+.modal-content button:hover {background:#e6e6e6;}
+</style>
+</head>
+<body>
+
+<canvas id="snow"></canvas>
+
+<div class="container">
+    <h1>Engine6.0 Archive</h1>
+
+    <div class="info-panels">
+        <div class="info-panel">
+            <h3>Security</h3>
+            <p>All files require a GoFile or media link to ensure secure storage and tracking.</p>
+        </div>
+        <div class="info-panel">
+            <h3>Privacy</h3>
+            <p>Passwords are optional but recommended to restrict access to sensitive files.</p>
+        </div>
+        <div class="info-panel">
+            <h3>Ownership</h3>
+            <p>Each file must include an owner name for proper identification in the archive.</p>
+        </div>
+    </div>
+
+    <button class="upload-btn" onclick="openModal()">Add File/Media</button>
+
+    <div class="file-grid" id="fileGrid"></div>
+</div>
+
+<div class="modal" id="uploadModal">
+    <div class="modal-content">
+        <h2>Add File/Media</h2>
+        <div class="panel">
+            <label>Owner Name</label>
+            <input type="text" id="ownerName" placeholder="Owner Name">
+        </div>
+        <div class="panel">
+            <label>Password (optional)</label>
+            <input type="password" id="filePassword" placeholder="Set password">
+        </div>
+        <div class="panel">
+            <label>Link (GoFile or Media) <span style="color:red">*</span></label>
+            <input type="text" id="fileLink" placeholder="Enter GoFile or media link" required>
+        </div>
+        <button onclick="submitFile()">Add to Archive</button>
+    </div>
+</div>
+
+<script>
+// ---------- Dynamic Snow Background ----------
+const canvas = document.getElementById("snow");
+const ctx = canvas.getContext("2d");
+let w, h;
+function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+window.addEventListener("resize", resize);
+resize();
+
+class Snowflake {
+    constructor(){ this.reset(); }
+    reset(){
+        this.x = Math.random()*w;
+        this.y = Math.random()*h - h;
+        this.radius = Math.random()*4 + 1;
+        this.speed = Math.random()*1.5 + 0.5;
+        this.wind = Math.random()*1 - 0.5;
+        this.opacity = Math.random()*0.8 + 0.2;
+    }
+    update(){
+        this.y += this.speed;
+        this.x += this.wind;
+        if(this.y>h || this.x<0 || this.x>w) this.reset();
+    }
+    draw(){
+        ctx.beginPath();
+        ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${this.opacity})`;
+        ctx.shadowColor="white";
+        ctx.shadowBlur = this.radius*2;
+        ctx.fill();
+    }
+}
+
+const flakesLayer1 = Array.from({length:100},()=>new Snowflake());
+const flakesLayer2 = Array.from({length:60},()=>new Snowflake());
+const flakesLayer3 = Array.from({length:40},()=>new Snowflake());
+
+function drawSnowLayer(layer){ layer.forEach(f=>{ f.update(); f.draw(); }); }
+function animateSnow(){ ctx.clearRect(0,0,w,h); drawSnowLayer(flakesLayer1); drawSnowLayer(flakesLayer2); drawSnowLayer(flakesLayer3); requestAnimationFrame(animateSnow);}
+animateSnow();
+
+// ---------- Modal ----------
+const modal=document.getElementById("uploadModal");
+function openModal(){modal.style.display="flex";}
+window.onclick=function(e){if(e.target==modal) modal.style.display="none";}
+
+// ---------- File Grid ----------
+let fileList=JSON.parse(localStorage.getItem("archiveFiles")||"[]");
+function renderFiles(){
+    const grid=document.getElementById("fileGrid");grid.innerHTML="";
+    fileList.forEach(f=>{
+        const card=document.createElement("div");card.className="file-card";
+        let mediaContent="";
+        if(f.link.match(/\.(jpeg|jpg|gif|png|webp)$/i)){
+            mediaContent=`<img src="${f.link}" alt="Media">`;
+        } else if(f.link.match(/\.(mp4|webm|ogg)$/i)){
+            mediaContent=`<video controls src="${f.link}"></video>`;
+        }
+        card.innerHTML=`
+            <h4>${f.name||"File/Media"}</h4>
+            <p>Owner: ${f.owner||"-"}</p>
+            <p>Password: ${f.password? "Yes":"No"}</p>
+            <a href="${f.link}" target="_blank">GoFile/Media Link</a>
+            ${mediaContent}
+        `;
+        grid.appendChild(card);
+    });
+}
+renderFiles();
+
+// ---------- Submit ----------
+function submitFile(){
+    const ownerName=document.getElementById("ownerName").value.trim();
+    const filePassword=document.getElementById("filePassword").value.trim();
+    const fileLink=document.getElementById("fileLink").value.trim();
+
+    if(!fileLink){alert("Link is required"); return;}
+
+    fileList.push({name:"File/Media",owner:ownerName,password:filePassword,link:fileLink});
+    localStorage.setItem("archiveFiles",JSON.stringify(fileList));
+    renderFiles();
+    modal.style.display="none";
+
+    document.getElementById("ownerName").value="";
+    document.getElementById("filePassword").value="";
+    document.getElementById("fileLink").value="";
+}
+</script>
+
+</body>
+</html>
